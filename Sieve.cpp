@@ -1,3 +1,4 @@
+
 void askCapAndCreateArray();
 
 static int *primeArray;
