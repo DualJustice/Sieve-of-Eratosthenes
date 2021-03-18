@@ -1,35 +1,17 @@
+#include "Arduino.h"
+#include "HardwareSerial.h"
 
-void askCapAndCreateArray();
 
-static int *primeArray;
+static int *primeZeroArray;
 
-void setup() {
-	Serial.begin(9600);
-	while (!Serial) {
-		delay(250);
-	}
-
-	pinMode(LED_BUILTIN, OUTPUT);
-	askCapAndCreateArray();
-
-	Serial.println(primeArray[0]);
-
-	int arrayBuffet = primeArray[0];
-	int index = 0;
-	while(arrayBuffet != -1) {
-		Serial.println(arrayBuffet);
-
-		index += 1;
-		arrayBuffet = primeArray[index];
-	}
-}
 
 int inputLoop() {
 	int userInput = 0;
 
-	while (true) {
-		if (Serial.available() > 0) {
+	while(true) {
+		if(Serial.available() > 0) {
 			userInput = Serial.parseInt();
+			Serial.print("You input: ");
 			Serial.println(userInput);
 			break;
 		}
@@ -42,72 +24,92 @@ int inputLoop() {
 	return userInput;
 }
 
-int *arrayLoop(int sieveCap) {
-	int *buildArray = new int[sieveCap - 1];
-	int *boolArray = new int[sieveCap - 1];
 
-	for (int i = 0; i < (sieveCap - 1); i += 1) {
+int *arrayLoop(int maxValue) {
+	int *buildArray = new int[maxValue];
+	int *boolArray = new int[maxValue];
+
+	for(int i = 0; i < maxValue; i += 1) {
 		buildArray[i] = i + 2;
 		boolArray[i] = 1;
 	}
 
-	for (int j = 0; j < (sieveCap - 1); j += 1) {
-		int jIndex = buildArray[j];
+	for(int i = 0; i < maxValue - 1; i += 1) {
+		int buildi = buildArray[i];
 
-		if (boolArray[j] == 1) {
-			for (int k = 1; k < sieveCap; k += 1) {
-				int testVal = jIndex * k + j;
+		if(boolArray[i] == 1) {
+			for(int k = 1; k < maxValue; k += 1) {
+				int convertToZero = buildi*k + i;
 
-				if (testVal <= sieveCap) {
-					boolArray[testVal] = 0;
-				} 
-				
+				if(convertToZero <= maxValue) {
+					boolArray[convertToZero] = 0;
+					// This may have overflow issues
+				}
+
 				else {
 					break;
 				}
 			}
 		}
 	}
-	int primeArraySize = 0;
 
-	for (int m = 0; m < (sieveCap - 1); m += 1) {
-		if (boolArray[m] == 1) {
-			primeArraySize += 1;
-		}
+	int *primeZeroArray = new int[maxValue];
+
+	for(int i = 0; i < maxValue; i += 1) {
+		primeZeroArray[i] = boolArray[i]*buildArray[i];
 	}
 
-	int *THEALMOSTFINALARRAY = new int[sieveCap];
+	primeZeroArray[maxValue - 1] = -1;
 
-	for (int n = 0; n < (sieveCap - 1); n += 1) {
-		THEALMOSTFINALARRAY[n] = boolArray[n] * buildArray[n];
-	}
-
-	THEALMOSTFINALARRAY[sieveCap] = -1;
-
-	return THEALMOSTFINALARRAY;
+	return primeZeroArray;
 }
 
-void askCapAndCreateArray() {
+
+void askMaxAndCreateArray() {
 	Serial.println("Please input a positive integer >= 2.");
 
-	int sieveCap = -1;
-
 	while(true) {
-		sieveCap = inputLoop();
+		int maxValue = inputLoop();
 
-		if (sieveCap < 2) {
-			Serial.println("Please make sure your input is >2.");
+		if(maxValue < 2) {
+			Serial.println("Please make sure your input is >= 2.");
 		}
 
 		else {
-			primeArray = arrayLoop(sieveCap);
+			primeZeroArray = arrayLoop(maxValue);
 			break;
 		}
 	}
 }
 
+
+void setup() {
+	Serial.begin(9600);
+	while(!Serial) {
+		delay(250);
+	}
+
+	while(true) {
+		askMaxAndCreateArray();
+
+		int i = 0;
+		int arrayBuffer = primeZeroArray[i];
+
+		while(arrayBuffer != -1) {
+			if(arrayBuffer != 0) {
+				Serial.print(arrayBuffer);
+				Serial.print(", ");
+			}
+
+			i += 1;
+			arrayBuffer = primeZeroArray[i];
+		}
+
+	Serial.println();
+	}
+}
+
+
 void loop() {
-	//delay(1000);
-	//Serial.print(primeArray);
-	//Serial.println();
+
 }
